@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Power of Attorney Generator (Demo)</title>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/docx@8.5.0/build/index.umd.js';document.head.appendChild(s);"></script>
+<style>
+:root{
+  --accent:#2596be;
+  --accent-dark:#1c7794;
+  --glass-bg:rgba(255,255,255,0.55);
+  --glass-border:rgba(255,255,255,0.35);
+  --text-dark:#1f2933;
+  --text-mid:#52606d;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Segoe UI',Arial,sans-serif;
+  background:linear-gradient(135deg,#eaf4f8 0%,#dceef5 50%,#eef6f9 100%);
+  color:var(--text-dark);
+  min-height:100vh;
+  padding:24px 16px 60px;
+}
+.wrap{max-width:920px;margin:0 auto;}
+.panel{
+  background:var(--glass-bg);
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 8px 32px rgba(31,73,89,0.12);
+  padding:28px 30px;
+  margin-bottom:22px;
+}
+h1{font-size:22px;margin:0 0 4px;color:var(--accent-dark);letter-spacing:.2px;}
+.subtitle{color:var(--text-mid);font-size:13.5px;margin:0;}
+.section-title{
+  font-size:14px;font-weight:700;color:var(--accent-dark);
+  text-transform:uppercase;letter-spacing:.6px;
+  margin:0 0 16px;border-bottom:2px solid var(--accent);padding-bottom:8px;
+}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--text-mid);margin-bottom:5px;}
+.field{margin-bottom:16px;}
+input[type=text],input[type=date],select,textarea{
+  width:100%;padding:10px 12px;font-size:14px;
+  border:1px solid #b9d3dd;background:rgba(255,255,255,0.75);
+  color:var(--text-dark);outline:none;font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;}
+@media(max-width:680px){.grid2{grid-template-columns:1fr;}}
+.hint{font-size:12px;color:var(--text-mid);margin-top:8px;margin-bottom:0;line-height:1.5;}
+details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--accent-dark);padding:8px 0;list-style:none;}
+details summary::before{content:"▸ ";}
+details[open] summary::before{content:"▾ ";}
+.attorney-card{
+  background:rgba(37,150,190,0.08);border:1px solid rgba(37,150,190,0.25);
+  padding:14px 16px;margin-bottom:10px;font-size:13px;color:var(--text-mid);
+}
+.attorney-card b{color:var(--text-dark);}
+.photo-box{
+  background:rgba(37,150,190,0.07);border:1px solid rgba(37,150,190,0.28);
+  padding:14px 16px;margin-bottom:16px;
+}
+.photo-box label{font-size:13px;margin-bottom:8px;}
+.photo-preview{width:90px;height:110px;object-fit:cover;object-position:top;border:1px solid #b9d3dd;display:block;margin-top:8px;}
+input[type=file]{
+  font-size:13px;
+  width:100%;
+  max-width:100%;
+  display:block;
+  padding:6px 0;
+  cursor:pointer;
+  color:var(--text-mid);
+}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+button{
+  border:none;cursor:pointer;font-family:inherit;font-weight:700;
+  font-size:14px;padding:13px 26px;letter-spacing:.3px;
+  transition:transform .08s ease,box-shadow .15s ease;
+}
+button:active{transform:translateY(1px);}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(37,150,190,0.35);}
+.btn-primary:hover{background:var(--accent-dark);}
+.btn-secondary{background:rgba(255,255,255,0.85);color:var(--accent-dark);border:2px solid var(--accent);}
+.btn-secondary:hover{background:#fff;}
+.btn-sm{padding:6px 14px;font-size:12px;}
+.error-box{
+  background:#fdecec;border:1px solid #e3a8a8;color:#9b2c2c;
+  padding:12px 14px;font-size:13px;margin-bottom:16px;display:none;
+}
+.badge{
+  display:inline-block;background:var(--accent);color:#fff;
+  font-size:10.5px;font-weight:700;padding:2px 9px;margin-left:8px;
+  vertical-align:middle;letter-spacing:.4px;
+}
+.footer-note{text-align:center;font-size:11.5px;color:var(--text-mid);margin-top:8px;}
+/* Print overlay */
+#printOverlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(20,40,48,0.55);z-index:999;
+  align-items:center;justify-content:center;padding:20px;
+}
+#printOverlay.active{display:flex;}
+#printFrameBox{
+  background:#fff;width:100%;max-width:900px;height:92vh;
+  display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,0.3);
+}
+#printFrameBox .pf-toolbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 18px;background:var(--accent-dark);
+}
+#printFrameBox .pf-toolbar span{color:#fff;font-weight:700;font-size:13px;}
+#printFrameBox .pf-toolbar .pf-actions{display:flex;gap:10px;}
+#printFrameBox .pf-toolbar button{padding:7px 16px;font-size:12.5px;}
+#poaFrame{flex:1;border:none;width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="panel" style="background:rgba(255,243,205,0.8);font-size:13px;color:#7a5b00;padding:14px 20px;">Demo version: sample data and placeholder photos only. Not legal advice.</div>
+
+<div class="panel">
+  <h1>Power of Attorney Generator<span class="badge">DEMO</span></h1>
+  <p class="subtitle">Fill in the details and generate a ready-to-use Power of Attorney — print to PDF or download as Word.</p>
+</div>
+
+<!-- SECTION 1: POA TYPE -->
+<div class="panel">
+  <div class="section-title">1 &nbsp;·&nbsp; POA Type</div>
+  <div class="field">
+    <label>Type of Proceeding</label>
+    <select id="poaType" onchange="onTypeChange()">
+      <option value="defend">Defend POA — Defend / Contest Admiralty Suit</option>
+      <option value="arrest">Arrest POA — Vessel Arrest &amp; Recovery Proceedings</option>
+    </select>
+  </div>
+  <p class="hint" id="typeHint">For defending or contesting an admiralty suit filed against the company/firm regarding a vessel.</p>
+</div>
+
+<!-- SECTION 2: POWER GIVER -->
+<div class="panel">
+  <div class="section-title">2 &nbsp;·&nbsp; Power Giver Details</div>
+
+  <div class="field">
+    <label>Power Giver Type</label>
+    <select id="giverType" onchange="onGiverTypeChange()">
+      <option value="company">Company (Board of Directors)</option>
+      <option value="firm">Firm / Proprietorship</option>
+    </select>
+  </div>
+
+  <!-- Photo upload -->
+  <div class="photo-box">
+    <label>📷 Power Giver's Photo <span style="font-weight:400;color:var(--text-mid)">(passport-size — appears in document)</span></label>
+    <input type="file" id="giverPhoto" accept="image/png,image/jpeg" onchange="onPhotoChange(event)">
+    <div id="photoPreviewWrap" style="display:none;">
+      <img id="photoPreview" class="photo-preview">
+      <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="clearPhoto()">Remove</button>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="field">
+      <label id="lbl_giverName">Full Name of Signatory *</label>
+      <input type="text" id="giverName" placeholder="e.g. Md. Rafiqul Islam">
+    </div>
+    <div class="field">
+      <label id="lbl_giverDesig">Designation *</label>
+      <input type="text" id="giverDesignation" placeholder="e.g. Managing Director">
+    </div>
+  </div>
+
+  <div class="field">
+    <label id="lbl_orgName">Company / Firm Name *</label>
+    <input type="text" id="orgName" placeholder="e.g. Example Shipping Limited">
+  </div>
+
+  <div class="field" id="wrap_orgType" style="display:none;">
+    <label>Type of Business</label>
+    <input type="text" id="orgType" placeholder="e.g. Proprietorship / Shipping Agency">
+  </div>
+
+  <div class="field">
+    <label id="lbl_orgAddress">Registered Office / Principal Address *</label>
+    <input type="text" id="orgAddress" placeholder="Full address">
+  </div>
+
+  <div class="grid2">
+    <div class="field">
+      <label>POA Issue Date *</label>
+      <input type="date" id="poaDate">
+    </div>
+    <div class="field">
+      <label id="lbl_authDate">Board Resolution Date *</label>
+      <input type="date" id="authDate">
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: VESSEL -->
+<div class="panel">
+  <div class="section-title">3 &nbsp;·&nbsp; Vessel &amp; Proceeding Details</div>
+  <div class="field">
+    <label>Vessel Name *</label>
+    <input type="text" id="vesselName" placeholder="e.g. MV OCEAN PRIDE">
+  </div>
+  <div class="field">
+    <label>Former / Previous Name of Vessel <span style="font-weight:400;color:var(--text-mid)">(Ex. Name — if applicable)</span></label>
+    <input type="text" id="vesselExName" placeholder="e.g. MV STAR PIONEER (leave blank if none)">
+  </div>
+  <div class="grid2">
+    <div class="field">
+      <label>IMO No.</label>
+      <input type="text" id="imoNo" placeholder="e.g. 9123456">
+    </div>
+    <div class="field">
+      <label>Flag</label>
+      <input type="text" id="flag" placeholder="e.g. Panama">
+    </div>
+  </div>
+  <div class="field" id="suitNoField">
+    <label>Admiralty Suit No. *</label>
+    <input type="text" id="suitNo" placeholder="e.g. 28 of 2026">
+  </div>
+</div>
+
+<!-- SECTION 4: ATTORNEYS -->
+<div class="panel">
+  <div class="section-title">4 &nbsp;·&nbsp; Constituted Attorneys</div>
+  <div id="attorneys_company">
+    <div class="attorney-card">
+      <b>1) Demo Attorney One</b> — National ID No.: 0000000000001, son of Mr. Sample Father One
+    </div>
+    <div class="attorney-card">
+      <b>2) Demo Attorney Two</b> — National ID No.: 0000000002, son of Sample Father Two<br>
+      Both of: Sample Chamber, 5th Floor, Demo Road, Sample City - 0000, Country
+    </div>
+  </div>
+  <div id="attorneys_firm" style="display:none;">
+    <div class="attorney-card">
+      <b>Demo Attorney One</b> — National ID No.: 0000000000001, son of Mr. Sample Father One<br>
+      Sample Chamber, 5th Floor, Demo Road, Sample City - 0000, Country
+    </div>
+  </div>
+  <details>
+    <summary>Edit attorney details (advanced)</summary>
+    <div class="field" style="margin-top:10px;">
+      <label>Attorney 1 — Full Description</label>
+      <input type="text" id="attorney1" value="Demo Attorney One (National ID No.: 0000000000001), son of Mr. Sample Father One">
+    </div>
+    <div class="field" id="attorney2wrap">
+      <label>Attorney 2 — Full Description</label>
+      <input type="text" id="attorney2" value="Demo Attorney Two (National ID No.: 0000000002), son of Sample Father Two">
+    </div>
+    <div class="field">
+      <label>Attorneys' Shared Address</label>
+      <input type="text" id="attorneyAddress" value="Sample Chamber, 5th Floor, Demo Road, Sample City - 0000, Country">
+    </div>
+  </details>
+</div>
+
+<!-- ERROR -->
+<div class="panel" id="errorPanel" style="display:none;">
+  <div class="error-box" id="errorBox" style="display:block;"></div>
+</div>
+
+<!-- ACTIONS -->
+<div class="panel">
+  <div class="btn-row">
+    <button class="btn-primary" onclick="generatePreview()">Preview &amp; Print to PDF</button>
+    <button class="btn-secondary" onclick="generateWord()">Download as Word (.docx)</button>
+  </div>
+</div>
+
+</div><!-- .wrap -->
+
+<!-- PRINT OVERLAY -->
+<div id="printOverlay">
+  <div id="printFrameBox">
+    <div class="pf-toolbar">
+      <span>Power of Attorney — Preview</span>
+      <div class="pf-actions">
+        <button class="btn-secondary" style="background:#fff;" onclick="doPrint()">Print / Save as PDF</button>
+        <button class="btn-secondary" style="background:#fff;" onclick="closePreview()">Close</button>
+      </div>
+    </div>
+    <iframe id="poaFrame"></iframe>
+  </div>
+</div>
+
+<script>
+// ── EMBEDDED ATTORNEY PHOTOS ──────────────────────────────────────────────
+const ATTORNEY1_IMG = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAFoASwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD2qiiitDMKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiism812CHKW481+meij/H/PNFhN2NaoZby2hLCSeNWUZKlhn8utcnc6hc3ZPmyttP8AADheuelVqrlJ5jrP7Z0//n4/8cb/AApyatYyOFFwoJ/vAgfmRXI0UcqFzM7iOWOZd0UiuoOMqcin1wqsVYMpIYHII6itG01u5t/lkPnJ6Mefz/xzS5RqR1NFVbPULe9B8piHAyUYYIq1SKCiiigYUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUyWVIYmkkYKijJJp9ctrGofa5/Kj/wBVGTgg/ePr/hQlcTdhNR1aW9zGo2QZyF7t9azqKK0MwooooEFFFFABRRRQAqsVYMpIYHII6iui0zWftDiC52rIeFYcBvY+9c5RSauNOx3dFZuj6h9rg8qT/WxgZJP3h6/41pVBoncKKKKBhRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAZut3f2eyMan55sqPp3/w/GuWq9q85n1KXrtQ7ACOmOv65qjVpaGTd2FFFFMQUUUUAFFFFABRRRQAUUUUATWtw1rcxzLyUOceo7j8q7NHWSNZEOVYAg+oNcNXSeH5zJaPCc5ibjjjB/wDr5qZIqLNeiiipNAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKa7rHG0jnCqCSfQCnVBff8eFz/wBcm/kaBHGMxZizElicknqaSiitDIKKKKACiiigAooooAKKKKACiiigArV0CUJfshYgOhAHYkc/yzWVV/Rv+QtB/wAC/wDQTSew1udZRRRUGoUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFRXMZmtZYlIDOhUZ6cipaKBHCUVPew/Z72aLbtCsdoznjt+mKgrQyCiiigAooooAKKKKACiiigAooooAK0tDjL6mjAjCKWOfpj+tZtb3h2H/XTlfRFbP4kfypPYa3N2iiioNQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAMLxBZ/du0H+y+B+R/p+VYNdvPC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ABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAdF4dkBtZosHcr7j6cj/61bNYHhx1ElxGT8xCkD2Gc/zFb9Q9zSOwUUUUigooooAKKKKACiiigArhK7uuEqokSCiiiqICiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKANbw9/x/yf9cj/ADFdLXNeHv8Aj/k/65H+YrpaiW5pHYKKKKRQUUUUAFFFFABRRRQAVwrKVYqwIYHBB6iu6ri77/j/ALn/AK6t/M1USJEFFFFUQFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAa/h5T9tkbB2iMgnt1H+FdJWF4b/AOXn/gH9a3aiW5pHYKKKKRQUUUUAFFFFABRRRQAVyutoy6pIWGA4Ur7jGP5g0UU47ky2M6iiirMwooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDp9ARl04lhgPISvuOB/MGtSiis3uarYKKKKBhRRRQB//Z';
+const ATTORNEY2_IMG  = 'data:image/png;base64,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';
+
+// ── PHOTO UPLOAD STATE ───────────────────────────────────────────────────
+let giverPhotoDataUrl = null;
+let giverPhotoBytes   = null;
+let giverPhotoMime    = null;
+
+function onPhotoChange(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    giverPhotoDataUrl = e.target.result;
+    giverPhotoMime    = file.type;
+    const b64 = e.target.result.split(',')[1];
+    giverPhotoBytes   = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    document.getElementById('photoPreview').src = giverPhotoDataUrl;
+    document.getElementById('photoPreviewWrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+function clearPhoto(){
+  giverPhotoDataUrl = giverPhotoBytes = giverPhotoMime = null;
+  document.getElementById('giverPhoto').value = '';
+  document.getElementById('photoPreviewWrap').style.display = 'none';
+}
+
+// ── UI STATE ─────────────────────────────────────────────────────────────
+function onTypeChange(){
+  const t = document.getElementById('poaType').value;
+  document.getElementById('typeHint').textContent = t === 'defend'
+    ? 'For defending or contesting an admiralty suit filed against the company/firm regarding a vessel.'
+    : 'For commencing vessel arrest and release proceedings to recover claims against a vessel.';
+  document.getElementById('suitNoField').style.display = (t === 'defend') ? 'block' : 'none';
+}
+
+function onGiverTypeChange(){
+  const isFirm = document.getElementById('giverType').value === 'firm';
+  document.getElementById('lbl_giverName').textContent  = isFirm ? 'Full Name of Proprietor *' : 'Full Name of Signatory *';
+  document.getElementById('lbl_giverDesig').textContent = isFirm ? 'Title / Designation *' : 'Designation *';
+  document.getElementById('giverDesignation').placeholder = isFirm ? 'Proprietor' : 'e.g. Managing Director';
+  document.getElementById('lbl_orgName').textContent    = isFirm ? 'Firm Name *' : 'Company Name *';
+  document.getElementById('lbl_orgAddress').textContent = isFirm ? 'Registered Office Address *' : 'Registered Office Address *';
+  document.getElementById('lbl_authDate').textContent   = isFirm ? 'Authorization / POA Date *' : 'Board Resolution Date *';
+  document.getElementById('wrap_orgType').style.display = isFirm ? 'block' : 'none';
+  // attorneys
+  document.getElementById('attorneys_company').style.display = isFirm ? 'none' : 'block';
+  document.getElementById('attorneys_firm').style.display    = isFirm ? 'block' : 'none';
+  document.getElementById('attorney2wrap').style.display     = isFirm ? 'none' : 'block';
+}
+
+// ── DATA COLLECTION ──────────────────────────────────────────────────────
+function fmtDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  const M = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  return d.getDate() + ' ' + M[d.getMonth()] + ' ' + d.getFullYear();
+}
+function vessel(data){
+  let s = data.vesselName;
+  if(data.vesselExName) s += ' (Ex. ' + data.vesselExName + ')';
+  const b = [];
+  if(data.imoNo) b.push('IMO No. ' + data.imoNo);
+  if(data.flag)  b.push('Flag: ' + data.flag);
+  if(b.length)   s += ', (' + b.join(', ') + ')';
+  return s;
+}
+function collectData(){
+  return {
+    poaType:     document.getElementById('poaType').value,
+    giverType:   document.getElementById('giverType').value,
+    giverName:   document.getElementById('giverName').value.trim(),
+    giverDesig:  document.getElementById('giverDesignation').value.trim(),
+    orgName:     document.getElementById('orgName').value.trim(),
+    orgType:     document.getElementById('orgType').value.trim(),
+    orgAddress:  document.getElementById('orgAddress').value.trim(),
+    poaDate:     document.getElementById('poaDate').value,
+    authDate:    document.getElementById('authDate').value,
+    vesselName:  document.getElementById('vesselName').value.trim(),
+    vesselExName:document.getElementById('vesselExName').value.trim(),
+    imoNo:       document.getElementById('imoNo').value.trim(),
+    flag:        document.getElementById('flag').value.trim(),
+    suitNo:      document.getElementById('suitNo').value.trim(),
+    att1:        document.getElementById('attorney1').value.trim(),
+    att2:        document.getElementById('attorney2').value.trim(),
+    attAddr:     document.getElementById('attorneyAddress').value.trim(),
+  };
+}
+function validate(d){
+  const m = [];
+  if(!d.giverName)  m.push('Name of Signatory/Proprietor');
+  if(!d.giverDesig) m.push('Designation');
+  if(!d.orgName)    m.push('Company / Firm Name');
+  if(!d.orgAddress) m.push('Address');
+  if(!d.poaDate)    m.push('POA Issue Date');
+  if(!d.authDate)   m.push(d.giverType === 'firm' ? 'Authorization Date' : 'Board Resolution Date');
+  if(!d.vesselName) m.push('Vessel Name');
+  if(d.poaType === 'defend' && !d.suitNo) m.push('Admiralty Suit No.');
+  return m;
+}
+function showError(msg){
+  document.getElementById('errorBox').innerHTML = msg;
+  const p = document.getElementById('errorPanel');
+  p.style.display = 'block';
+  p.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function clearError(){
+  document.getElementById('errorPanel').style.display = 'none';
+}
+
+// ── PDF BODY HTML ────────────────────────────────────────────────────────
+function buildBody(d){
+  const v     = vessel(d);
+  const pDate = fmtDate(d.poaDate);
+  const aDate = fmtDate(d.authDate);
+  const isFirm = d.giverType === 'firm';
+
+  if(d.poaType === 'defend'){
+    const intro = isFirm
+      ? `By this Power of Attorney issued on this <b>${pDate}</b>, the undersigned, <b>${d.giverName}</b>, <b>${d.giverDesig}</b> of <b>${d.orgName}</b>, having its registered office <b>${d.orgAddress}</b> (hereinafter referred to as &lsquo;the firm&rsquo;) hereby appoint 1) ${d.att1} and 2) ${d.att2} at ${d.attAddr} to act as our true and lawful attorneys (hereinafter referred to as &lsquo;the constituted attorneys&rsquo;) of the firm.`
+      : `By this Power of Attorney issued on this <b>${pDate}</b>, the undersigned, <b>${d.giverName}</b>, <b>${d.giverDesig}</b> of <b>${d.orgName}</b> having its registered office <b>${d.orgAddress}</b> (hereinafter referred to as &lsquo;the company&rsquo;) have been authorised by the directors of the company vide a resolution dated <b>${aDate}</b> &ndash; taken in its Board Meeting &ndash; hereby appoint 1) ${d.att1} and 2) ${d.att2} at ${d.attAddr} to act as true and lawful attorneys (hereinafter referred to as &lsquo;the constituted attorneys&rsquo;) of the company.`;
+    return `<p>${intro}</p>
+    <p>The constituted attorney is authorised to execute all or any of the acts and things that is to say:</p>
+    <ol>
+      <li>To defend and/or contest any action or proceeding including the admiralty suit no. <b>${d.suitNo}</b> regarding the vessel, ${v}, filed in the High Court Division of the Supreme Court of Bangladesh and to adduce &amp; produce oral and documentary evidence on behalf of the ${isFirm?'firm':'company'} in such action or proceeding;</li>
+      <li>To prefer and/or contest appeal in relation to such action or proceeding and to adduce &amp; produce oral and documentary evidence on behalf of the ${isFirm?'firm':'company'} in such action or proceeding;</li>
+      <li>To affirm affidavit in support of any application and/or written objection on behalf of the ${isFirm?'firm':'company'} in such action or proceeding;</li>
+      <li>To execute vokalatnamas, to swear affidavits before the Commissioner of Oath of the Supreme Court of Bangladesh, to take any or all such steps as may be necessary for conducting such action or proceeding and to do everything in connection with the same as may be fit and proper;</li>
+      <li>To take such other lawful ways and means for recovery of such sum of money whatsoever shall deem fit and proper on behalf of the ${isFirm?'firm':'company'};</li>
+    </ol>
+    <p>We hereby confirm that all such acts of our aforesaid constituted attorney would be deemed to be our acts in this regard.</p>`;
+  } else {
+    // ARREST
+    const attBlock = isFirm
+      ? `Demo Attorney One (${d.att1.includes('National')?d.att1:'National ID No.: 0000000000001, son of Mr. Sample Father One'}), ${d.attAddr}`
+      : `1) ${d.att1}, and 2) ${d.att2}, ${d.attAddr}`;
+    const intro = isFirm
+      ? `By this Power of Attorney issued on this <b>${pDate}</b>, the undersigned, <b>${d.giverName}</b>, <b>${d.giverDesig}</b> of <b>${d.orgName}</b> having its registered office <b>${d.orgAddress}</b> (hereinafter referred to as &lsquo;the firm&rsquo;) hereby appoint ${attBlock} to act as our true and lawful attorney (hereinafter referred to as &lsquo;the constituted attorney&rsquo;) of the Firm. The constituted attorney is being authorised to execute all or any of the acts and things that is to say:`
+      : `By this Power of Attorney issued on this <b>${pDate}</b>, the undersigned, <b>${d.giverName}</b>, <b>${d.giverDesig}</b> of <b>${d.orgName}</b> having its registered office <b>${d.orgAddress}</b> (hereinafter referred to as &lsquo;the company&rsquo;) have been authorised by the directors of the company vide a resolution dated <b>${aDate}</b> &ndash; taken in its Board Meeting &ndash; hereby appoint ${attBlock} to act as our true and lawful attorneys (hereinafter referred to as &lsquo;the constituted attorneys&rsquo;) of the company. The constituted attorneys are being authorised to execute all or any of the acts and things that is to say:`;
+    return `<p>${intro}</p>
+    <ol>
+      <li>To commence and conduct any action or proceeding including arrest and release proceedings in the courts of Bangladesh including the admiralty court of Bangladesh against the vessel ${v} for recovery of our claims and to sign and seal warrant of attorney and plaint and application for arrest of this vessel and to affirm Affidavit in support of any application and/or written objection or to appeal in relation to such proceedings and to adduce and produce oral and documentary evidence in such proceedings on my behalf;</li>
+      <li>To take such other lawful ways and means for recovery of such sum of money whatsoever shall deem fit and proper against the vessel ${v}, and their owners and other parties;</li>
+      <li>He is further authorised to swear Affidavit before the Commissioners of Oath of the High Court Division, execute vokalatnamas on my behalf and to take any or all such steps as may be necessary for filing, commencing and conducting the admiralty suit and to do everything in connection with the same as may be fit and proper.</li>
+    </ol>
+    <p>We hereby confirm that all such acts of our aforesaid constituted attorney would be deemed to be our acts in this regard.</p>`;
+  }
+}
+
+// ── PHOTO ROW HTML (for PDF) ──────────────────────────────────────────────
+function photoRowHTML(d){
+  const isFirm = d.giverType === 'firm';
+  const giverImg = giverPhotoDataUrl
+    ? `<img src="${giverPhotoDataUrl}" style="width:100px;height:120px;object-fit:cover;object-position:top;border:1px solid #aaa;display:block;">`
+    : `<div style="width:100px;height:120px;border:1px dashed #bbb;display:flex;align-items:center;justify-content:center;font-size:9pt;color:#aaa;">Photo</div>`;
+  const ps = 'width:100px;height:120px;object-fit:cover;object-position:top;border:1px solid #aaa;display:block;margin-left:auto;';
+  const cs = 'font-size:9.5pt;font-style:italic;margin-top:4px;';
+
+  const att2Block = `<div style="display:inline-block;vertical-align:top;text-align:right;margin-left:30px;"><img src="${ATTORNEY2_IMG}" style="${ps}"><div style="${cs}">Demo Attorney One<br>(The power receiver)</div></div>`;
+  const att1Block = `<div style="display:inline-block;vertical-align:top;text-align:right;margin-left:30px;"><img src="${ATTORNEY1_IMG}" style="${ps}"><div style="${cs}">Demo Attorney Two<br>(The power receiver)</div></div>`;
+
+  const receivers = isFirm ? att2Block : (att1Block + att2Block);
+
+  return `<table style="width:100%;border-collapse:collapse;margin-bottom:20px;"><tr>
+    <td style="vertical-align:top;">${giverImg}<div style="${cs}">${d.giverName||''}<br>(The power giver)</div></td>
+    <td style="vertical-align:top;text-align:right;">${receivers}</td>
+  </tr></table>`;
+}
+
+// ── FULL PDF HTML ────────────────────────────────────────────────────────
+function buildFullHTML(d){
+  const entity = d.giverType === 'firm' ? 'Firm' : 'Firm/Company';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    @page{size:A4;margin:22mm 20mm;}
+    body{font-family:'Lucida Fax','Lucida Bright','Book Antiqua',Georgia,serif;font-size:12pt;line-height:1.6;color:#111;}
+    h1{text-align:center;font-size:15pt;text-decoration:underline;font-weight:bold;margin:0 0 20px;}
+    p{margin:0 0 12px;text-align:justify;}
+    ol{padding-left:0;margin:0 0 12px;list-style-position:outside;margin-left:22px;}
+    ol li{margin-bottom:10px;text-align:justify;padding-left:6px;}
+    .sig-wrap{margin-top:40px;}
+    .sig-space{height:60px;border-bottom:1px solid #333;margin-bottom:8px;width:260px;}
+    .sig-label{font-size:10pt;color:#555;margin-bottom:14px;}
+    .sig-field{margin-bottom:4px;font-size:11.5pt;line-height:1.4;}
+    .sig-field .lbl{font-weight:bold;}
+    .full-name-line{border-bottom:1px solid #999;width:340px;height:28px;margin-bottom:4px;margin-top:10px;}
+    .full-name-label{font-size:10pt;color:#555;}
+  </style></head><body>
+  ${photoRowHTML(d)}
+  <h1>Power of Attorney</h1>
+  ${buildBody(d)}
+  <div class="sig-wrap">
+    <div class="sig-space"></div>
+    <div class="sig-label">Signature &amp; Seal</div>
+    <div style="margin-top:10px;margin-bottom:14px;font-size:11.5pt;"><span style="font-weight:bold;">Full Name:</span> ${d.giverName}</div>
+    <div style="margin-top:14px;">
+      <div class="sig-field"><span class="lbl">Designation in the ${d.giverType==='firm'?'firm':'company/firm'}:</span> ${d.giverDesig}</div>
+      <div class="sig-field"><span class="lbl">${entity} Name:</span> ${d.orgName}</div>
+      <div class="sig-field"><span class="lbl">Address:</span> ${d.orgAddress}</div>
+      <div class="sig-field"><span class="lbl">${entity} seal:</span></div>
+    </div>
+  </div>
+  </body></html>`;
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────────────
+let _lastHTML = '';
+function generatePreview(){
+  clearError();
+  const d = collectData();
+  const m = validate(d);
+  if(m.length){ showError('Please fill in: <b>' + m.join(', ') + '</b>'); return; }
+  _lastHTML = buildFullHTML(d);
+  const frame = document.getElementById('poaFrame');
+  frame.srcdoc = _lastHTML;
+  document.getElementById('printOverlay').classList.add('active');
+}
+function closePreview(){ document.getElementById('printOverlay').classList.remove('active'); }
+function doPrint(){
+  // Inject a hidden iframe into the page body, print from it — no popup needed
+  const old = document.getElementById('_printFrame');
+  if(old) old.remove();
+  const f = document.createElement('iframe');
+  f.id = '_printFrame';
+  f.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+  document.body.appendChild(f);
+  f.srcdoc = _lastHTML;
+  f.onload = function(){
+    setTimeout(function(){
+      try{ f.contentWindow.focus(); f.contentWindow.print(); }
+      catch(e){ showError('Print failed. Try right-clicking the preview and selecting Print.'); }
+    }, 300);
+  };
+}
+
+// ── WORD GENERATION ───────────────────────────────────────────────────────
+function b64ToBytes(dataUrl){
+  const raw = atob(dataUrl.split(',')[1]);
+  const bytes = new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+  return bytes;
+}
+
+function generateWord(){
+  clearError();
+  if(typeof docx === 'undefined'){
+    showError('Word library not loaded yet — please check your internet connection and reload the page. Use "Preview & Print to PDF" as an alternative.');
+    return;
+  }
+  const d = collectData();
+  const m = validate(d);
+  if(m.length){ showError('Please fill in: <b>' + m.join(', ') + '</b>'); return; }
+
+  const { Document, Packer, Paragraph, TextRun, ImageRun, Table, TableRow, TableCell,
+           AlignmentType, LevelFormat, TabStopType, TabStopPosition, UnderlineType,
+           WidthType, BorderStyle } = docx;
+
+  const v     = vessel(d);
+  const pDate = fmtDate(d.poaDate);
+  const aDate = fmtDate(d.authDate);
+  const isFirm = d.giverType === 'firm';
+
+  const att1Bytes = b64ToBytes(ATTORNEY1_IMG);
+  const att2Bytes  = b64ToBytes(ATTORNEY2_IMG);
+
+  const noBorder = { style: BorderStyle.NONE, size:0, color:'FFFFFF' };
+  const cellBorders = { top:noBorder, bottom:noBorder, left:noBorder, right:noBorder };
+
+  function imgCell(bytes, type, name, role, pct, align){
+    const al = align || AlignmentType.LEFT;
+    return new TableCell({
+      children:[
+        new Paragraph({ alignment:al, children:[ new ImageRun({ data:bytes, transformation:{width:90,height:108}, type }) ] }),
+        new Paragraph({ alignment:al, children:[ new TextRun({ text: name, italics:true, size:18 }) ], spacing:{after:0} }),
+        new Paragraph({ alignment:al, children:[ new TextRun({ text: role, italics:true, size:18 }) ], spacing:{after:0} }),
+      ],
+      borders: cellBorders,
+      width:{ size:pct, type:WidthType.PERCENTAGE }
+    });
+  }
+
+  // Giver cell — left aligned
+  const giverCellChildren = [
+    ...(giverPhotoBytes
+      ? [new Paragraph({ alignment:AlignmentType.LEFT, children:[ new ImageRun({ data:giverPhotoBytes, transformation:{width:90,height:108}, type: giverPhotoMime==='image/png'?'png':'jpg' }) ] })]
+      : [new Paragraph({ alignment:AlignmentType.LEFT, children:[ new TextRun({ text:'[Photo]', color:'AAAAAA', italics:true }) ] })]),
+    new Paragraph({ alignment:AlignmentType.LEFT, children:[ new TextRun({ text: d.giverName, italics:true, size:18 }) ], spacing:{after:0} }),
+    new Paragraph({ alignment:AlignmentType.LEFT, children:[ new TextRun({ text: '(The power giver)', italics:true, size:18 }) ], spacing:{after:0} }),
+  ];
+
+  const photoTableRows = isFirm
+    ? [ new TableRow({ children:[
+        new TableCell({ children: giverCellChildren, borders: cellBorders, width:{size:50,type:WidthType.PERCENTAGE} }),
+        imgCell(att2Bytes, 'png', 'Demo Attorney One', '(The power receiver)', 50, AlignmentType.RIGHT),
+      ]}) ]
+    : [ new TableRow({ children:[
+        new TableCell({ children: giverCellChildren, borders: cellBorders, width:{size:34,type:WidthType.PERCENTAGE} }),
+        imgCell(att1Bytes, 'jpg', 'Demo Attorney Two', '(The power receiver)', 33, AlignmentType.RIGHT),
+        imgCell(att2Bytes,  'png', 'Demo Attorney One', '(The power receiver)', 33, AlignmentType.RIGHT),
+      ]}) ];
+
+  const children = [];
+
+  // Photo row at top
+  children.push(new Table({ rows: photoTableRows, width:{size:100,type:WidthType.PERCENTAGE} }));
+  children.push(new Paragraph({ spacing:{after:200}, children:[new TextRun({text:''})] }));
+
+  // Title
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing:{ after:300 },
+    children:[ new TextRun({ text:'Power of Attorney', bold:true, size:32, underline:{type:UnderlineType.SINGLE} }) ]
+  }));
+
+  // Body paragraphs — build intro
+  function mixed(parts){
+    return new Paragraph({
+      alignment: AlignmentType.JUSTIFIED, spacing:{after:200},
+      children: parts.map(s => new TextRun({text:s.t, bold:!!s.b}))
+    });
+  }
+  function plain(text){
+    return new Paragraph({ alignment:AlignmentType.JUSTIFIED, spacing:{after:200}, children:[new TextRun({text})] });
+  }
+  function numbered(text, num){
+    return new Paragraph({
+      numbering:{reference:'poa-list',level:0},
+      alignment:AlignmentType.JUSTIFIED, spacing:{after:160},
+      children:[new TextRun({text})]
+    });
+  }
+
+  const entity = isFirm ? 'firm' : 'company';
+
+  if(d.poaType === 'defend'){
+    const attText = isFirm
+      ? `1) ${d.att1} and 2) ${d.att2} at ${d.attAddr}`
+      : `1) ${d.att1} and 2) ${d.att2} at ${d.attAddr}`;
+    const resText = isFirm ? '' : ` vide a resolution dated ${aDate} – taken in its Board Meeting –`;
+
+    children.push(mixed([
+      {t:'By this Power of Attorney issued on this '},
+      {t:pDate,b:true},
+      {t:', the undersigned, '},
+      {t:d.giverName,b:true},
+      {t:', '},
+      {t:d.giverDesig,b:true},
+      {t:' of '},
+      {t:d.orgName,b:true},
+      {t:' having its registered office '},
+      {t:d.orgAddress,b:true},
+      {t:` (hereinafter referred to as 'the ${entity}') ${isFirm?'':'have been authorised by the directors of the company'}${resText} hereby appoint ${attText} to act as true and lawful attorneys (hereinafter referred to as 'the constituted attorneys') of the ${entity}.`}
+    ]));
+    children.push(plain(`The constituted attorney is authorised to execute all or any of the acts and things that is to say:`));
+    [`To defend and/or contest any action or proceeding including the admiralty suit no. ${d.suitNo} regarding the vessel, ${v}, filed in the High Court Division of the Supreme Court of Bangladesh and to adduce & produce oral and documentary evidence on behalf of the ${entity} in such action or proceeding;`,
+     `To prefer and/or contest appeal in relation to such action or proceeding and to adduce & produce oral and documentary evidence on behalf of the ${entity} in such action or proceeding;`,
+     `To affirm affidavit in support of any application and/or written objection on behalf of the ${entity} in such action or proceeding;`,
+     `To execute vokalatnamas, to swear affidavits before the Commissioner of Oath of the Supreme Court of Bangladesh, to take any or all such steps as may be necessary for conducting such action or proceeding and to do everything in connection with the same as may be fit and proper;`,
+     `To take such other lawful ways and means for recovery of such sum of money whatsoever shall deem fit and proper on behalf of the ${entity};`
+    ].forEach(t => children.push(numbered(t)));
+  } else {
+    // arrest
+    const attText = isFirm
+      ? `${d.att1}, ${d.attAddr}`
+      : `1) ${d.att1}, and 2) ${d.att2}, ${d.attAddr}`;
+    const resText = isFirm ? '' : ` vide a resolution dated ${aDate} – taken in its Board Meeting –`;
+    const attorneys = isFirm ? 'attorney' : 'attorneys';
+
+    children.push(mixed([
+      {t:'By this Power of Attorney issued on this '},
+      {t:pDate,b:true},
+      {t:', the undersigned, '},
+      {t:d.giverName,b:true},
+      {t:', '},
+      {t:d.giverDesig,b:true},
+      {t:' of '},
+      {t:d.orgName,b:true},
+      {t:' having its registered office '},
+      {t:d.orgAddress,b:true},
+      {t:` (hereinafter referred to as 'the ${entity}') ${isFirm?'':'have been authorised by the directors of the company'}${resText} hereby appoint ${attText} to act as our true and lawful ${attorneys} (hereinafter referred to as 'the constituted ${attorneys}') of the ${entity}. The constituted ${attorneys} are being authorised to execute all or any of the acts and things that is to say:`}
+    ]));
+    [`To commence and conduct any action or proceeding including arrest and release proceedings in the courts of Bangladesh including the admiralty court of Bangladesh against the vessel ${v} for recovery of our claims and to sign and seal warrant of attorney and plaint and application for arrest of this vessel and to affirm Affidavit in support of any application and/or written objection or to appeal in relation to such proceedings and to adduce and produce oral and documentary evidence in such proceedings on my behalf;`,
+     `To take such other lawful ways and means for recovery of such sum of money whatsoever shall deem fit and proper against the vessel ${v}, and their owners and other parties;`,
+     `He is further authorised to swear Affidavit before the Commissioners of Oath of the High Court Division, execute vokalatnamas on my behalf and to take any or all such steps as may be necessary for filing, commencing and conducting the admiralty suit and to do everything in connection with the same as may be fit and proper.`
+    ].forEach(t => children.push(numbered(t)));
+  }
+
+  children.push(plain('We hereby confirm that all such acts of our aforesaid constituted attorney would be deemed to be our acts in this regard.'));
+
+  // Signature block
+  children.push(new Paragraph({ spacing:{before:500, after:0}, children:[new TextRun({text:''})] }));
+  // Signature line
+  children.push(new Paragraph({ border:{ bottom:{style:BorderStyle.SINGLE,size:6,color:'333333',space:1} }, spacing:{after:80}, children:[new TextRun({text:''})] }));
+  children.push(new Paragraph({ spacing:{after:120}, children:[ new TextRun({text:'Signature & Seal', color:'777777', size:18, italics:true}) ] }));
+  // Full Name — auto-filled
+  children.push(new Paragraph({ spacing:{after:160}, children:[ new TextRun({text:'Full Name: ', bold:true}), new TextRun({text:d.giverName}) ] }));
+
+  [
+    [`Designation in the ${entity}: `, d.giverDesig],
+    [`${isFirm?'Firm':'Firm/Company'} Name: `, d.orgName],
+    [`Address: `, d.orgAddress],
+    [`${isFirm?'Firm':'Firm/Company'} seal: `, ''],
+  ].forEach(([label, val]) => {
+    children.push(new Paragraph({
+      spacing:{after:60},
+      children:[ new TextRun({text:label,bold:true}), new TextRun({text:val}) ]
+    }));
+  });
+
+  const doc = new Document({
+    styles:{
+      default:{
+        document:{ run:{ font:'Lucida Fax', size:24 } }
+      }
+    },
+    numbering:{ config:[{ reference:'poa-list',
+      levels:[{ level:0, format:LevelFormat.DECIMAL, text:'%1.',
+        alignment:AlignmentType.LEFT,
+        style:{ paragraph:{ indent:{left:360, hanging:360} } }
+      }]
+    }] },
+    sections:[{
+      properties:{ page:{ size:{width:11906,height:16838}, margin:{top:1440,right:1440,bottom:1440,left:1440} } },
+      children
+    }]
+  });
+
+  Packer.toBlob(doc).then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (d.poaType==='defend'?'Defend':'Arrest') + '_POA_' + (d.orgName||'Demo').replace(/[^a-z0-9]+/gi,'_') + '.docx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }).catch(e => showError('Word generation failed: ' + e.message));
+}
+
+// init
+onTypeChange();
+onGiverTypeChange();
+</script>
+</body>
+</html>
