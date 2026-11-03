@@ -2,7 +2,7 @@
 
 A browser-based form that generates a ready-to-use Power of Attorney document for admiralty proceedings. Fill in the details, then print to PDF or download as a Word file.
 
-**Live demo:** https://YOUR_USERNAME.github.io/poa-generator-demo/
+**Live demo:** https://asifur-rahman-ai.github.io/poa-generator-demo/
 
 > This is a demo version. All names, ID numbers, addresses and photos are sample data. Nothing here is legal advice.
 
